@@ -136,11 +136,11 @@ def colores_series(columnas, c1, c2):
 # Mapa de extension (st.map)
 # ---------------------------------------------------------------------------
 def datos_mapa_extension(df, anio, metrica, escala, color_hex):
-    """Un punto por departamento, SIEMPRE los mismos puntos todos los años.
+    """Un punto por departamento, SIEMPRE los mismos puntos todos los anios.
 
     st.map recalcula centro y zoom a partir de los datos: si los puntos cambian de un
-    año a otro, el mapa "salta" y pierde el zoom del usuario. Por eso los departamentos
-    sin yerba en el año quedan como puntos transparentes en lugar de eliminarse.
+    anio a otro, el mapa "salta" y pierde el zoom del usuario. Por eso los departamentos
+    sin yerba en el anio quedan como puntos transparentes en lugar de eliminarse.
     """
     sembrado = metrica == "Sembrado"
     col_area = "superficie_sembrada_ha" if sembrado else "superficie_cosechada_ha"
@@ -236,7 +236,7 @@ def seccion_exploracion(df, c1, c2):
     nombre_var = f1.radio("Variable", list(VARIABLES), horizontal=True, key="exp_var")
     agrupar = f2.radio("Agrupar", ["Total", "Por provincia", "Por departamento"], horizontal=True,
                        key="exp_agr")
-    rango = f3.slider("Rango de años", anio_min, anio_max, (anio_min, anio_max), key="exp_rango")
+    rango = f3.slider("Rango de anios", anio_min, anio_max, (anio_min, anio_max), key="exp_rango")
     variable = VARIABLES[nombre_var]
 
     departamentos = None
@@ -253,10 +253,10 @@ def seccion_exploracion(df, c1, c2):
     st.subheader(f"{nombre_var} a lo largo del tiempo")
     st.line_chart(ancha, color=colores_series(ancha.columns, c1, c2) if agrupar != "Por departamento"
                   else (colores_departamentos(c1, c2, len(ancha.columns))))
-    st.dataframe(resumen_series(ancha), width=True)
+    st.dataframe(resumen_series(ancha), use_container_width=True)
 
-    st.subheader("Un Año en detalle")
-    anio = st.slider("Año", rango[0], rango[1], rango[1], key="exp_anio")
+    st.subheader("Un anio en detalle")
+    anio = st.slider("Anio", rango[0], rango[1], rango[1], key="exp_anio")
     dy = df[df["anio"] == anio].copy()
     izq, der = st.columns(2)
     with izq:
@@ -326,7 +326,7 @@ def seccion_insights(df_deptos, df_nacional, c1, c2):
                  f"a {serie.iloc[-1]:.0f}% en {serie.index[-1]}.")
         if anios_pleno:
             texto += (f" Figura 100% cosechado entre {min(anios_pleno)} y {max(anios_pleno)}"
-                      " (en algunos años, lo que sugiere que sembrado y cosechado se informaron igual).")
+                      " (en algunos anios, lo que sugiere que sembrado y cosechado se informaron igual).")
         st.caption(texto)
 
     # ---- Insight 3: promedio por decada y crecimiento
@@ -346,7 +346,7 @@ def seccion_insights(df_deptos, df_nacional, c1, c2):
                  delta_color="off")
     if vista == "Por provincia":
         ultimo = ancha3.iloc[-1]
-        st.caption("Participacion en la produccion del ultimo Año: " + ", ".join(
+        st.caption("Participacion en la produccion del ultimo anio: " + ", ".join(
             f"{p} {v / ultimo.sum() * 100:.0f}%" for p, v in ultimo.items()) + ".")
 
 
@@ -379,8 +379,9 @@ def main():
     estilo()
     c1, c2 = COLOR_1, COLOR_2
     st.markdown("# Yerba mate en Argentina <span class='sol'>&#9728;</span>", unsafe_allow_html=True)
+    st.markdown("**Dashboard realizado por Francisco Rizzi**")
     st.caption("Superficie, produccion y rendimiento por departamento, 1970-2024. "
-               "Fuente: Dataset Nacional de la Yerba y centroides de Georef.")
+               "Fuente: datasets de yerba mate incluidos y centroides de la API Georef.")
 
     try:
         df = cargar_deptos()
@@ -392,6 +393,15 @@ def main():
     anio_min, anio_max = int(df["anio"].min()), int(df["anio"].max())
 
     tab_ext, tab_exp, tab_ins = st.tabs(["Extension", "Produccion y rendimiento", "Insights"])
+
+    # El pie va antes de llenar las pestanas: con la animacion en bucle el script
+    # no pasa de la pestania Extension, y asi igual se dibuja al final de la pagina.
+    st.divider()
+    st.markdown(
+        "Fuente de los datos: "
+        "[Yerba mate: siembra, cosecha, produccion y rendimiento (datos.gob.ar)]"
+        "(https://datos.gob.ar/dataset/yerba-mate-siembra-cosecha-produccion-rendimiento)"
+    )
 
     # ---------------- Produccion y rendimiento
     with tab_exp:
@@ -409,8 +419,8 @@ def main():
                            key="ext_metrica")
         escala = k2.select_slider("Multiplo del radio (1 = tamano real)", [1, 2, 3, 5, 10], value=1,
                                   key="ext_escala")
-        pausa = k3.slider("Segundos por Año (animacion)", 0.2, 2.0, 0.6, 0.1, key="ext_pausa")
-        anio = st.slider("Año", anio_min, anio_max, anio_max, key="ext_anio")
+        pausa = k3.slider("Segundos por anio (animacion)", 0.2, 2.0, 0.6, 0.1, key="ext_pausa")
+        anio = st.slider("Anio", anio_min, anio_max, anio_max, key="ext_anio")
         play = st.toggle("Reproducir en bucle (se detiene al tocar cualquier control)", key="ext_play")
 
         color = c1 if metrica == "Sembrado" else c2
